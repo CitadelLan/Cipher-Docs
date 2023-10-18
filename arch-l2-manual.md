@@ -9,6 +9,9 @@
     * `[31:0] wdata`：读数据
     * `csr_w`：写使能信号
     * `[1:0] csr_wsc_mode`：写模式
+      * 00、01：在对应寄存器写入待写入数据
+      * 10：在对应寄存器原有数据基础上 位或 待写入数据
+      * 11：在对应寄存器原有数据基础上 位与 待写入数据取反的结果
   * Local Vars：
     * `reg[31:0] CSR [0:15]`：模块内部的CSR寄存器
     *   地址相关，以读地址为例（写地址判断赋值语句类似）：
@@ -27,3 +30,11 @@
   * Output：
     * \[31:0] rdata：CSR\[raddr\_map]
     * \[31:0] mstatus：CSR\[0]
+
+### CSR指令
+
+<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>CSR指令一览</p></figcaption></figure>
+
+* CSRRW：`CSRRW rd, csr, rs1` <==> GPR\[rd] = CSR\[csr], CSR\[csr] = GPR\[rs1]
+* CSRRS：
+
