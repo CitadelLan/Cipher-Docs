@@ -83,6 +83,24 @@
 
 <figure><img src=".gitbook/assets/image (11).png" alt=""><figcaption><p>正确图示</p></figcaption></figure>
 
+*   处理方法
+
+    * 异常指令的PC被保存在mepc中，PC被设置为mtvec（即跳转到trap handler的基地址）。mepc指向导致异常的指令；对于中断，它指向中断处理后应该恢复执行的位置。
+    * 根据异常来源设置mcause，并将mtval设置为出错的地址或者其它适用于特定异常的信息字。下面是实验中会用到的mcause存储的异常类型：
+
+    | Interrupt | Exception Code |      异常类型     |
+    | :-------: | :------------: | :-----------: |
+    |     1     |        0       |    Reserved   |
+    |     0     |        2       |      非法指令     |
+    |     0     |        5       |    Load地址非法   |
+    |     0     |        7       | Store/AMO地址非法 |
+    |     0     |       11       |     ECALL     |
+
+    * 把控制状态寄存器mstatus中的MIE（`mstatus[3]`）位置零以禁用中断，并把先前的MIE值保留到MPIE（`mstatus[7]`）中。
+    * 发生异常之前的权限模式保留在mstatus的MPP域（`mstatus[12:11]`）中，再把权限模式更改为M（`2'b11`）。
+
+<figure><img src=".gitbook/assets/image (8).png" alt=""><figcaption><p>RISC-V权限模式</p></figcaption></figure>
+
 ### ExceptionUnit
 
 <figure><img src=".gitbook/assets/abc1fa9a172c8c1ffb37092424a031bd (1).png" alt=""><figcaption><p>模块注释</p></figcaption></figure>
