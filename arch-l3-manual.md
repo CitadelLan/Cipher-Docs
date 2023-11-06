@@ -7,8 +7,9 @@
 * inner\_dirty：对应地址下是否是脏元素（没写入内存）
 * inner\_tag（23 bits / index）：对应地址的Tag
 * inner\_data（32 bits / index）：对应地址的存储数据
-
-> 需要指出，这里的`[0:ELEMENT_NUM*ELEMENT_WORDS-1]`实际上代表了这个cache一共64个槽位，每个槽位可以代表一个 4 word的地址空间（addr\[3:2] 可以表示4个连续word的地址空间），即cache实际上可以代表`[0:ELEMENT_NUM*ELEMENT_WORDS-1]`大小的地址空间。但这里有个很奇怪的地方是，实际上我们运用到的只有其中64个下标（即实际槽位数量）没有block ofs（cache它甚至不愿意\*4）
+  * &#x20;这里\[0:ELEMENT\_NUM\*ELEMENT\_WORDS-1]\`实际上代表了这个cache一共64个槽位，每个槽位可以代表一个 4 word的地址空间（addr\[3:2] 可以表示4个连续word的地址空间），即cache实际上可以代表\`\[0:ELEMENT\_NUM\*ELEMENT\_WORDS-1]\`大小的地址空间。
+  * 4 word大小的block在工程里表现为addr\_element
+  * 加入了block ofs，取word实际地址的变量为addr\_word1 / 2
 
 #### 地址解析
 
@@ -32,3 +33,5 @@
   * 根据LRU原则，替换掉最久没被调用的槽位上的数据，如果一个set里两个槽位都没有recent标记，则默认放在第一个槽位。
 * invalid
   * 类似于rst，把inner\_recent / inner\_valid / inner\_dirty全部置零。
+
+> 注意事项：因为cache采用非阻塞赋值，所以非assign变量的值要在下一个周期才能看到。
