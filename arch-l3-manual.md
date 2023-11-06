@@ -28,9 +28,10 @@
 
 * edit / partial write into cache：
   * 原理类似于load / read，但是这里对于非word类型的写入位置是严格根据传入地址操作的，例如对于写入half\_word，需要知道在对应地址word的前一半还是后一半进行写操作，并且会保留原word的没有被覆盖写的另一半
-  * 设置inner\_recent、inner\_dirty
+  * 设置inner\_recent、inner\_dirty，<mark style="color:red;">不改变inner\_tag、inner\_valid</mark>
 * store / write into cache
   * <mark style="color:red;">这里的写入cache是不需要hit的</mark>
   * 根据LRU原则，替换掉最久没被调用的槽位上的数据，如果一个set里两个槽位都没有recent标记，则默认放在第一个槽位。
+  * 设置inner\_recent、inner\_dirty、<mark style="color:red;">inner\_tag、inner\_valid</mark>
 
 > 注意事项：因为cache采用非阻塞赋值，所以非assign变量的值要在下一个周期才能看到。
