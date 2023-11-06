@@ -25,10 +25,10 @@
 
 > u\_b\_h\_w：（指定位为1即表示符合要求） 2：是否是有符号数（对于非word有需要） 1：是否是word（第一优先级） 0：是否是half\_word（第二优先级）
 
-* edit / write into cache：
+* edit / partial write into cache：
   * 原理类似于load / read，但是这里对于非word类型的写入位置是严格根据传入地址操作的，例如对于写入half\_word，需要知道在对应地址word的前一半还是后一半进行写操作，并且会保留原word的没有被覆盖写的另一半
   * 设置inner\_recent、inner\_dirty
-* store / write into RAM
+* store / write into cache
   * 根据LRU原则，替换掉最久没被调用的槽位上的数据，如果一个set里两个槽位都没有recent标记，则默认放在第一个槽位。
 * invalid
   * 类似于rst，把inner\_recent / inner\_valid / inner\_dirty全部置零。
