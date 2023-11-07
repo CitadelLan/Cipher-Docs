@@ -3,6 +3,18 @@
 #### 新内存模块重点
 
 ```verilog
+parameter
+	ADDR_WIDTH = 11;
+
+localparam
+	S_IDLE = 0,
+	S_READING1 = 1,
+	S_READING2 = 2,
+	S_READ = 3,
+	S_WRITING1 = 4,
+	S_WRITING2 = 5,
+	S_WRITE = 6;
+
 always @ (*) begin
 	if (cs) begin
 		if (we) begin
