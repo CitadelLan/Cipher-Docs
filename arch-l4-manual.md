@@ -42,7 +42,8 @@ always @ (*) begin
 end
 ```
 
-> 在state == S\_READ或state == S\_WRITE时，ack信号设置为1。
+* 代码中无意义的读/写的多状态跳转是用于实际工作中内存的低速运行，从行为逻辑本身来说没有必要
+* 在state == S\_READ或state == S\_WRITE时，ack信号设置为1
 
 #### CMU
 
