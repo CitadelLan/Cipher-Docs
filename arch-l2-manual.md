@@ -21,7 +21,7 @@
 
 ***
 
-<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>ECALL</p></figcaption></figure>
+<figure><img src=".gitbook/assets/image (1).png" alt=""><figcaption><p>ECALL</p></figcaption></figure>
 
 <figure><img src=".gitbook/assets/image (3).png" alt=""><figcaption><p>MRET</p></figcaption></figure>
 

@@ -49,6 +49,8 @@ end
 
 **CMU状态机**
 
+<figure><img src=".gitbook/assets/image.png" alt=""><figcaption><p>状态机一览</p></figcaption></figure>
+
 * S\_IDLE：cache读写命中
 * S\_PRE\_BACK：cache读写miss且cache当前槽位dirty，读取cache对应槽位，准备写入内存
 * S\_BACK：上升沿将上个状态的数据写回到memory，下降沿从cache读下次需要写回的数据（因此最后一次读无意义），由计数器控制直到整个cache line全部写回，需要等待ack信号
