@@ -5,3 +5,4 @@
 * [Arch-L2 Manual](arch-l2-manual.md)
 * [Arch-L3 Manual](arch-l3-manual.md)
 * [Arch-L4 Manual](arch-l4-manual.md)
+* [Arch-L5 Manual](arch-l5-manual.md)
