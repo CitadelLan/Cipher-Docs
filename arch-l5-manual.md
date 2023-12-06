@@ -73,3 +73,15 @@
 
 * 使用`Predict not taken`，其优势在Lab1中已经阐述过，这里不再赘述
 * `Branching`操作在 FU 阶段执行，如果预测错误，则flush掉branch后两条指令
+* 对所有`Jump/Branch Taken`的指令，流水线不会和往常一样等待到 WB 阶段再停止对 IF、ID 阶段的 stall，而是在 FU 阶段让流水线继续运行，在代码中的实现如下所示：
+
+```verilog
+    /* CtrlUnit.v */
+    assign reg_IF_en = ~FU_in_use | branch_ctrl;
+
+    assign reg_ID_en = reg_IF_en;
+
+    assign branch_ctrl = (B_in_FU & cmp_res_FU) |  J_in_FU;
+
+    assign reg_ID_flush = branch_ctrl;
+```
