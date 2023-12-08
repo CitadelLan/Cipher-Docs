@@ -84,4 +84,57 @@
   *   EX：等待对应模块运算结束，运算结束后对应 FU 的`FU_Done`信号设置为输入中对应的结束信号（ALU\_Done、MEM\_Done、...）
 
       > 对于目前空闲的FU模块，需要保持其原来的`FU_Done`
-  * WB
+  *   WB 阶段的 WAR 检测
+
+      ```verilog
+      	wire ALU_WAR = (
+      		(FUS[`FU_MEM ][`SRC1_H:`SRC1_L] != ... | ...)  & 
+      		(FUS[`FU_MEM ][`SRC2_H:`SRC2_L] != ... | ...)  & 
+      		(FUS[`FU_MUL ][`SRC1_H:`SRC1_L] != ... | ...)  & 
+      		(FUS[`FU_MUL ][`SRC2_H:`SRC2_L] != ... | ...)  & 
+      		(FUS[`FU_DIV ][`SRC1_H:`SRC1_L] != ... | ...)  & 
+      		(FUS[`FU_DIV ][`SRC2_H:`SRC2_L] != ... | ...)  & 
+      		(FUS[`FU_JUMP][`SRC1_H:`SRC1_L] != ... | ...)  & 
+      		(FUS[`FU_JUMP][`SRC2_H:`SRC2_L] != ... | ...)    
+      	);
+      ```
+
+      > 这里代码的逻辑是以 0 代表有 WAR，1 代表没有 WAR
+
+      * 当前指令所处的 FU 模块所用到的**目标寄存器**与 上一指令所处的 FU 模块的**源寄存器**相同，即先读后写
+      * 上一指令的**目标寄存器**没有准备好（在RO阶段之后，RDY信号就会变为No/0）
+      * 在本次实验中，WAR如果存在，且后发射指令（W指令）先到达WB会怎么样？&#x20;
+
+      &#x20;       Scoreboard算法会在 WB 阶段检测后发射指令是否先进入WB，如果有的话则会对这条指令进行stall，直到先发射的指令WB完毕。从代码角度来看：
+
+      ```verilog
+      /* 时序逻辑中WB阶段 */
+      // JUMP
+      if (FUS[`FU_JUMP][`FU_DONE] & JUMP_WAR) begin
+              FUS[`FU_JUMP] <= 32'b0;
+              RRS[FUS[`FU_JUMP][`DST_H:`DST_L]] <= 3'b0;
+      		......
+      end
+
+      /* 组合逻辑中WB阶段 */
+      if (FUS[`FU_JUMP][`FU_DONE] & JUMP_WAR) begin
+          write_sel = 3'd4;
+          reg_write = 1'b1;
+          rd_ctrl = FUS[`FU_JUMP][`DST_H:`DST_L];
+      end
+      ```
+
+      &#x20;       这里可能还说的不是很明显，请回忆WAR变量的赋值逻辑：WAR赋值与对应FU的数据依赖关系和RDY位有关，而RDY的赋值主要是在ISSUE阶段进行。如果RDY为1，则上一条指令还在ISSUE阶段，否则其输入数据仍未准备好，或已经在后续流程中。当上一条指令进入了 WB 阶段，则对应FU变为0，WAR hazard就不会继续存在了，那么这条指令也就可以继续执行了。
+  *   WB阶段的RAWstall释放
+
+      ```verilog
+      if (FUS[`FU_ALU][`FU1_H:`FU1_L] == `FU_JUMP) ...;
+      ```
+
+      * 从原理上来说，我们需要覆写F2里的值，去除对应依赖当前写回值的FU里的Qj、Qk以及Rj、Rk。在本工程中只需要设置Rj、Rk，即RDY1、RDY2。
+
+      > 那我们寄存器重命名后的对应存储位置的值怎么办呢？就个人目前对框架的理解，本实验中指令运算的输入值依然是通过GPR（通用寄存器）来取值的，所谓寄存器重命名只是明确指令流中的数据依赖关系，即：
+
+      ```verilog
+      FUS[`FU_ALU][`FU1_H:`FU1_L] == `FU_JUMP
+      ```
