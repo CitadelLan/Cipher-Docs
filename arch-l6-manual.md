@@ -102,10 +102,8 @@
       > 这里代码的逻辑是以 0 代表有 WAR，1 代表没有 WAR
 
       * 当前指令所处的 FU 模块所用到的**目标寄存器**与 上一指令所处的 FU 模块的**源寄存器**相同，即先读后写
-      * 上一指令的**目标寄存器**没有准备好（在RO阶段之后，RDY信号就会变为No/0）
-      * 在本次实验中，WAR如果存在，且后发射指令（W指令）先到达WB会怎么样？&#x20;
-
-      &#x20;       Scoreboard算法会在 WB 阶段检测后发射指令是否先进入WB，如果有的话则会对这条指令进行stall，直到先发射的指令WB完毕。从代码角度来看：
+      * 上一指令的**目标寄存器**准备好了（在RO阶段之后，RDY信号就会变为No/0）
+      * 在本次实验中，WAR如果存在，且后发射指令（W指令）先到达WB会怎么样？ Scoreboard算法会在 WB 阶段检测后发射指令是否先进入WB，如果有的话则会对这条指令进行stall，直到先发射的指令WB完毕。从代码角度来看：
 
       ```verilog
       /* 时序逻辑中WB阶段 */
@@ -124,7 +122,24 @@
       end
       ```
 
-      &#x20;       这里可能还说的不是很明显，请回忆WAR变量的赋值逻辑：WAR赋值与对应FU的数据依赖关系和RDY位有关，而RDY的赋值主要是在ISSUE阶段进行。如果RDY为1，则上一条指令还在ISSUE阶段，否则其输入数据仍未准备好，或已经在后续流程中。当上一条指令进入了 WB 阶段，则对应FU变为0，WAR hazard就不会继续存在了，那么这条指令也就可以继续执行了。
+      这里可能还说的不是很明显，请回忆WAR变量的赋值逻辑：WAR赋值与对应FU的数据依赖关系和RDY位有关，而RDY的赋值主要是在ISSUE阶段进行。如果RDY为1，则上一条指令还在ISSUE阶段，否则其输入数据仍未准备好，或已经在后续流程中。一旦上一条指令进入了RO阶段，需要的输入和操作就已经确定，当前指令就可以放心写回了。
+
+      ```verilog
+      // JUMP
+      if (FUS[`FU_JUMP][`RDY1] & FUS[`FU_JUMP][`RDY2]) begin
+          ALU_en = 1'b0;
+          MEM_en = 1'b0;
+          MUL_en = 1'b0;
+          DIV_en = 1'b0;
+          JUMP_en = 1'b1;
+
+          JUMP_op = FUS[`FU_JUMP][`OP_H:`OP_L];
+          rs1_ctrl = FUS[`FU_JUMP][`SRC1_H:`SRC1_L];
+          rs2_ctrl = FUS[`FU_JUMP][`SRC2_H:`SRC2_L];
+          PC_ctrl = PCR[`FU_JUMP];
+          imm_ctrl = IMM[`FU_JUMP];
+      end
+      ```
   *   WB阶段的RAWstall释放
 
       ```verilog
