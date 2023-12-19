@@ -1,12 +1,35 @@
 # Arch-L6 Manual
 
+### 一、实验目的、要求及任务
+
+#### （一）实验目的
+
+* Understand the principle of piplines that support multicycle operations.
+* Understand the principle of Dynamic Scheduling With a Scoreboard.
+* Master the design methods of piplines that support multicycle operations.
+* Master the design methods of Dynamically Scheduled Pipelines using Scoreboarding.
+* Master verification methods of Dynamically Scheduled Pipelines using Scoreboarding.
+
+#### （二）实验任务
+
+* Redesign the pipelines with IF/IS/RO/FU/WB stages and supporting multicycle operations.
+* Design of a scoreboard and integrate it to CPU.
+* Verify the Pipelined CPU with program and observe the execution of program.
+
+### 二、实验内容与原理
+
+#### 原理图
+
 #### Scoreboard
 
 * 提出理由
   * 五级流水线虽好，但无论经过多少优化，我们能够达到的最优CPI也就是1，但我们或许可以做到更优的CPI。
-  * 在进行运算的时候，不同的运算所消耗的时间是截然不同的。例如下图中，除法所消耗的时间是极长的，但下面的减法指令与上两条指令没有关系，完全可以独立先行运行掉。在五级流水线中，减法就需要等待上面的除法结束运算后才能运行，CPU的运行效率就被一条除法指令拖累了很多。&#x20;
-  * 自然地，我们会考虑根据不同指令类型的运算时长与占比期望来拆分掉这些运算模块，并且这些模块可以是复数个，这样就可以帮助尽可能降低CPU因为上一点问题所带来的stall。&#x20;
-* FU结构&#x20;
+  * 在进行运算的时候，不同的运算所消耗的时间是截然不同的。例如下图中，除法所消耗的时间是极长的，但下面的减法指令与上两条指令没有关系，完全可以独立先行运行掉。在五级流水线中，减法就需要等待上面的除法结束运算后才能运行，CPU的运行效率就被一条除法指令拖累了很多。\
+
+  * 自然地，我们会考虑根据不同指令类型的运算时长与占比期望来拆分掉这些运算模块，并且这些模块可以是复数个，这样就可以帮助尽可能降低CPU因为上一点问题所带来的stall。\
+
+* FU结构\
+
 
 ```verilog
 // function unit
@@ -37,6 +60,8 @@
 `define FU_DONE 29
 ```
 
+### 三、实验过程
+
 * 工作原理
   *   ISSUE：设置对应的FU，如果流水线陷入stall状态，那么对应指令会在这里重新给FU赋值
 
@@ -50,21 +75,21 @@
 
       // IS
       if (RO_en) begin
-      	// not busy, no WAW, write info to RRS and FUS
-      	if (|dst) RRS[dst] <= use_FU;
-      	FUS[use_FU][`BUSY]           <= 1'b1;
-      	FUS[use_FU][`OP_H:`OP_L]     <= op;
-      	FUS[use_FU][`DST_H:`DST_L]   <= dst;
-      	FUS[use_FU][`SRC1_H:`SRC1_L] <= src1;
-      	FUS[use_FU][`SRC2_H:`SRC2_L] <= src2;
-      	FUS[use_FU][`FU1_H:`FU1_L]   <= fu1;
-      	FUS[use_FU][`FU2_H:`FU2_L]   <= fu2;
-      	FUS[use_FU][`RDY1]           <= rdy1;
-      	FUS[use_FU][`RDY2]           <= rdy2;
-      	FUS[use_FU][`FU_DONE]        <= 1'b0;
+          // not busy, no WAW, write info to RRS and FUS
+          if (|dst) RRS[dst] <= use_FU;
+          FUS[use_FU][`BUSY]           <= 1'b1;
+          FUS[use_FU][`OP_H:`OP_L]     <= op;
+          FUS[use_FU][`DST_H:`DST_L]   <= dst;
+          FUS[use_FU][`SRC1_H:`SRC1_L] <= src1;
+          FUS[use_FU][`SRC2_H:`SRC2_L] <= src2;
+          FUS[use_FU][`FU1_H:`FU1_L]   <= fu1;
+          FUS[use_FU][`FU2_H:`FU2_L]   <= fu2;
+          FUS[use_FU][`RDY1]           <= rdy1;
+          FUS[use_FU][`RDY2]           <= rdy2;
+          FUS[use_FU][`FU_DONE]        <= 1'b0;
 
-      	IMM[use_FU] <= imm;
-      	PCR[use_FU] <= PC;
+          IMM[use_FU] <= imm;
+          PCR[use_FU] <= PC;
       end
       ```
 
@@ -74,9 +99,9 @@
       ```verilog
       // RO
       if (FUS[`FU_JUMP][`RDY1] & FUS[`FU_JUMP][`RDY2]) begin
-      	// JUMP
-      	FUS[`FU_JUMP][`RDY1] <= 1'b0;
-      	FUS[`FU_JUMP][`RDY2] <= 1'b0;
+          // JUMP
+          FUS[`FU_JUMP][`RDY1] <= 1'b0;
+          FUS[`FU_JUMP][`RDY2] <= 1'b0;
       end
       ```
 
@@ -90,21 +115,21 @@
         * 前一条指令已经完成：本条指令正常进行
         * 前一条指令未完成
           * 前一条指令在 IS 阶段
-            * 对应寄存器的 RDY 为 0：上一条指令与前面的指令存在 RAW 关系，交给 RAW 进行stall
+            * 对应寄存器的 RDY 为 0：上一条指令与前面的指令存在 RAW 关系，而当前指令和前面的指令就构成了WAW关系，所以交给WAW进行stall
             * 对应寄存器的 RDY 为 1：本条指令如果已经完成，等待上一条指令进入 RO
           * 前一条指令不在IS阶段：前一条指令已经取到了需要的值，可以完成本条指令
 
       ```verilog
-      	wire ALU_WAR = (
-      		(FUS[`FU_MEM ][`SRC1_H:`SRC1_L] != ... | ...)  & 
-      		(FUS[`FU_MEM ][`SRC2_H:`SRC2_L] != ... | ...)  & 
-      		(FUS[`FU_MUL ][`SRC1_H:`SRC1_L] != ... | ...)  & 
-      		(FUS[`FU_MUL ][`SRC2_H:`SRC2_L] != ... | ...)  & 
-      		(FUS[`FU_DIV ][`SRC1_H:`SRC1_L] != ... | ...)  & 
-      		(FUS[`FU_DIV ][`SRC2_H:`SRC2_L] != ... | ...)  & 
-      		(FUS[`FU_JUMP][`SRC1_H:`SRC1_L] != ... | ...)  & 
-      		(FUS[`FU_JUMP][`SRC2_H:`SRC2_L] != ... | ...)    
-      	);
+          wire ALU_WAR = (
+              (FUS[`FU_MEM ][`SRC1_H:`SRC1_L] != ... | ...)  & 
+              (FUS[`FU_MEM ][`SRC2_H:`SRC2_L] != ... | ...)  & 
+              (FUS[`FU_MUL ][`SRC1_H:`SRC1_L] != ... | ...)  & 
+              (FUS[`FU_MUL ][`SRC2_H:`SRC2_L] != ... | ...)  & 
+              (FUS[`FU_DIV ][`SRC1_H:`SRC1_L] != ... | ...)  & 
+              (FUS[`FU_DIV ][`SRC2_H:`SRC2_L] != ... | ...)  & 
+              (FUS[`FU_JUMP][`SRC1_H:`SRC1_L] != ... | ...)  & 
+              (FUS[`FU_JUMP][`SRC2_H:`SRC2_L] != ... | ...)    
+          );
       ```
 
       > 这里代码的逻辑是以 0 代表有 WAR，1 代表没有 WAR
@@ -122,7 +147,7 @@
       if (FUS[`FU_JUMP][`FU_DONE] & JUMP_WAR) begin
               FUS[`FU_JUMP] <= 32'b0;
               RRS[FUS[`FU_JUMP][`DST_H:`DST_L]] <= 3'b0;
-      		......
+              ......
       end
 
       /* 组合逻辑中WB阶段 */
@@ -164,3 +189,47 @@
       ```verilog
       FUS[`FU_ALU][`FU1_H:`FU1_L] == `FU_JUMP
       ```
+
+### 四、数据记录
+
+#### 模拟结果
+
+*   St. Ha.
+
+    ```unix-assembly
+    lw x2, 4(x0)
+    lw x4, 8(x0)
+    ```
+
+    * 连续lw指令：后续lw指令必须stall，直至前面的lw指令写回且告知后续lw指令对应FU空闲才可以执行\
+
+*   WAW & St. Ha.：
+
+    ```unix-assembly
+    add x1, x2, x4
+    addi x1, x1, -1
+    ```
+
+    * 连续add指令 & WAW：即使对于只有WAW的指令，流水线依旧会stall直到前一条指令写回\
+
+*   St. Ha. + RAW + WAW + WAR
+
+    ```unix-assembly
+    div x8, x7, x2
+    mul x9, x4, x5
+    mul x9, x8, x2
+    addi x2, x0, 4
+    ...
+    lw x2,4(x0)
+    ```
+
+    * St. Ha：连续两个mul导致后一个mul必须等待前一个mul空闲
+    * RAW：第二个mul必须等待div写回结果，lw必须等待addi写回
+    * WAW：连续两个写回导致后一个mul必须等待前一个mul写回结果
+    * WAR：addi必须等待第二个mul的指令发送出去 &#x20;
+
+#### 物理验证
+
+* St. Ha. &#x20;
+* St. Ha. & WAW &#x20;
+* St. Ha. + RAW + WAW + WAR     &#x20;
